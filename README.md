@@ -2,6 +2,7 @@
 
 A granular delay / micro-sampler script inspired by guitar pedals like [Chase Bliss Mood](https://www.chaseblissaudio.com/shop-pedals/mood) or [Count to 5](https://mtlasm.com/product/count-to-5/) and designed for the [Electrosmash Pedal Pi](https://www.electrosmash.com/pedal-pi) project with Raspberry Pi Zero.
 
+
 --- to be finished ---
 
 ![Pedal Pi](assets/pedal-pi-intro.png)
