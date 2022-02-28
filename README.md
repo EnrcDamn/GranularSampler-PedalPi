@@ -31,7 +31,7 @@ Pedal Pi Specifications:
 
 ## 2. Installation and running
  
-You would need to install the Operating System (Raspbian) and the Libraries (BCM2835). Full instructions available on the official [webpage](https://www.electrosmash.com/forum/pedal-pi/202-how-to-start-programming-pedal-pi?lang=en).
+You would need to install the Operating System (Raspbian) and the libraries (BCM2835). Full instructions available on this [webpage](https://www.electrosmash.com/forum/pedal-pi/202-how-to-start-programming-pedal-pi?lang=en).
 
 Cloning the repo:
 ``` sh
