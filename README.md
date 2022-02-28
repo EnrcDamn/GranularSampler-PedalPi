@@ -2,6 +2,7 @@
 
 A granular delay / micro-sampler script inspired by guitar pedals like [Chase Bliss Mood](https://www.chaseblissaudio.com/shop-pedals/mood) or [Count to 5](https://mtlasm.com/product/count-to-5/) and designed for the [Electrosmash Pedal Pi](https://www.electrosmash.com/pedal-pi) project with Raspberry Pi Zero.
 
+This repository is an original design based on a project I made for my BSc thesis on audio signal distortion.
 
 --- to be finished ---
 
@@ -36,7 +37,7 @@ You would need to install the Operating System (Raspbian) and the libraries (BCM
 Cloning the repo:
 ``` sh
 git clone https://github.com/EnrcDamn/granular-sampler-pedal-pi.git
-sudo granular-sampler-pedal-pi
+cd granular-sampler-pedal-pi
 ```
 
 Compiling and executing the script:
