@@ -1,5 +1,6 @@
 #include <bcm2835.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // Define Input Pins
 #define PUSH1 	        RPI_GPIO_P1_08      //GPIO14
@@ -8,28 +9,35 @@
 #define FOOT_SWITCH     RPI_GPIO_P1_10 		//GPIO15
 #define LED             RPI_V2_GPIO_P1_36 	//GPIO16
 
+#define TRUE 1
+#define FALSE 0
+#define PRESSED 0
+
 
 // Define Delay Effect parameters: 50000 is 1 second approx.
 #define DELAY_MAX 250000 //5 seconds
 #define DELAY_MIN 0
 
+long DelayCounter = 0;
 uint32_t Delay_Buffer[DELAY_MAX];
-uint32_t DelayCounter = 100;
 uint32_t Delay_Depth = 100000;
 
-uint32_t input_signal=0;
-uint32_t speed=20;
-uint32_t up=1;
-uint32_t code_delay=0;
-uint32_t output_signal=0;
+uint32_t input_signal = 0;
+uint32_t speed = 20;
+uint32_t up = 1;
+uint32_t code_delay = 0;
+uint32_t output_signal = 0;
 uint32_t read_timer, delay;
-uint32_t recording=0;
-uint32_t record_lenght=100;
+uint32_t recording = FALSE;
+uint32_t playback_mode = 0;
+uint32_t record_lenght = 100;
  
 uint8_t FOOT_SWITCH_val;
 uint8_t TOGGLE_SWITCH_val;
 uint8_t PUSH1_val;
+uint8_t is_PUSH1_pressed;
 uint8_t PUSH2_val;
+uint8_t is_PUSH2_pressed;
  
 int main(int argc, char **argv)
 {
@@ -78,7 +86,7 @@ int main(int argc, char **argv)
 	bcm2835_gpio_set_pud(FOOT_SWITCH, BCM2835_GPIO_PUD_UP);     // FOOT_SWITCH pull-up enabled 
  
     // Main Loop
-	while(1)
+    while(1)
 	{
         // Read 12 bits ADC
         //bcm2835_spi_transfernb(mosi, miso, 3);
@@ -94,37 +102,60 @@ int main(int argc, char **argv)
             TOGGLE_SWITCH_val = bcm2835_gpio_lev(TOGGLE_SWITCH);
             uint8_t FOOT_SWITCH_val = bcm2835_gpio_lev(FOOT_SWITCH);
             bcm2835_gpio_write(LED,!FOOT_SWITCH_val); // Light the effect when the footswitch is activated.
-            if (TOGGLE_SWITCH_val==0)
+
+            if (TOGGLE_SWITCH_val == 0)
+            {
+                if (PUSH1_val == PRESSED)
+                {          
+                    is_PUSH1_pressed = TRUE;
+                }
+
+                if (PUSH1_val == !PRESSED && is_PUSH1_pressed)
+                { 	
+                    is_PUSH1_pressed = FALSE;
+                    if (recording == TRUE)
+                    {
+                        recording = FALSE;
+                        printf("Stopped recording.\n");
+                        record_lenght = DelayCounter;
+                        DelayCounter = 0;
+                    }
+                    else 
+                    {
+                        recording = TRUE;
+                        printf("Recording...\n");
+                        DelayCounter = 0;
+                    }
+                }
+                if (PUSH2_val == PRESSED)
+                {   
+                    bcm2835_delay(100); // 100ms delay for buttons debouncing.
+                    playback_mode++;
+                    if (playback_mode > 2) playback_mode = 0;
+                    if (playback_mode=0) printf("Normal playback (%d)\n", playback_mode);
+                    else if (playback_mode=1) printf("Random granular playback (%d)\n", playback_mode);
+                    else printf("Reversed playback (%d)\n", playback_mode)
+                }
+            }
+        
+
+
+            else
             {
                 if (PUSH2_val==0)
                 {
                     bcm2835_delay(100); // 100ms delay for buttons debouncing. 
                     speed+=5;
+                    printf("Pitching up\n");
                 }
                 if (PUSH1_val==0) 
                 { 	
                     bcm2835_delay(100); // 100ms delay for buttons debouncing. 
                     speed-=5;
+                    printf("Pitching down\n");
                 }
             }
         }
-        else
-        {
-            if (PUSH2_val==0)
-            {          
-                bcm2835_delay(100); // 100ms delay for buttons debouncing. 
-                recording=0;
-                record_lenght=DelayCounter;
-                DelayCounter=0;
-            }
-            if (PUSH1_val==0) 
-            { 	
-                bcm2835_delay(100); // 100ms delay for buttons debouncing. 
-                recording=1;
-                DelayCounter=0;
-            }
-        }
-        
 
         //**** TRIANGULAR SIGNAL GENERATOR ***///
         // Nothing to do, the input_signal goes directly to the PWM output.
@@ -143,11 +174,15 @@ int main(int argc, char **argv)
         }
         
 
-        //**** LOOPER GUITAR EFFECT ***///
-            if (recording==1)
+
+        //**** MODE 1: SAMPLER ***///
+
+        // LOOP ACTIVATE - DEACTIVATE
+
+        if (recording == TRUE)
         {   
             // Start recording
-            Delay_Buffer[DelayCounter] = input_signal;
+            Delay_Buffer[DelayCounter] += input_signal;
             DelayCounter++;
             output_signal = input_signal;
             //bcm2835_gpio_write(LED, 1);
@@ -155,12 +190,39 @@ int main(int argc, char **argv)
         }
         else 
         {   
-            // Bypass mode
-            output_signal = (Delay_Buffer[DelayCounter]+input_signal)>>1;
-            DelayCounter++;
-            if (DelayCounter>record_lenght) DelayCounter=0;
-            //bcm2835_gpio_write(LED,FOOT_SWITCH_val);
+            // PLAYBACK MODES (normal, granular, reversed)
+
+            if (playback_mode == 0)
+            {   
+                // Normal playback
+                output_signal = (Delay_Buffer[DelayCounter]+input_signal)>>1;
+                DelayCounter++;
+                if (DelayCounter > record_lenght) DelayCounter=0;
+            }
+            else if (playback_mode == 1)
+            {   
+                // Random reversed grains
+                output_signal = (Delay_Buffer[DelayCounter]+input_signal)>>1;
+                DelayCounter++;
+                if (DelayCounter > record_lenght) DelayCounter=0;
+            }
+            else
+            {
+                // Reverse all signal
+                if (DelayCounter < 0) DelayCounter = record_lenght-1;
+                output_signal = (Delay_Buffer[DelayCounter]+input_signal)>>1;
+                DelayCounter--;
+            }
         }
+
+
+        //**** MODE 2: EFFECTS ***///
+
+        // ADJUST DELAY
+
+        // TIME STRETCHING
+
+        
 
         // Add a delay of 20 microseconds (sampling frequency = 50kHz)
         bcm2835_delayMicroseconds(20);
