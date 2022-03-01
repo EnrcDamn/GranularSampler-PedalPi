@@ -19,8 +19,8 @@ Pedal Pi Specifications:
 
 * Based in Raspberry Pi Zero (1GHz ARM11 core).
 * Analog stages using MCP6002 rail-to-rail operational amplifier.
-* ADC: 12bits / Sampling Rate 50Ksps (MCP3202).
-* Output Stage: 12 bits (2x6bits PWMs running in parallel)
+* ADC: 12 bits / Sampling Rate 50Ksps (MCP3202).
+* Output Stage: 12 bits (2x6 bits PWMs running in parallel)
 * Pi Zero:
     * 1GHz ARM11 core.
     * 512MB of LPDDR2 SDRAM.
