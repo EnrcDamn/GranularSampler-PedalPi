@@ -208,7 +208,7 @@ int main(int argc, char **argv)
             }
             else if (playback_mode == 1)
             {   
-                // Randomly chosen and reversed grains
+                // Random granular delay
                 grain_counter++;
                 if (!sample_is_randomized)
                 {   
@@ -243,7 +243,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                // Reverse all signal
+                // Reversed playback
                 sample_is_randomized = FALSE; // Reset randomized flag
                 if (current_sample < 0) current_sample = record_lenght-1;
                 output_signal = (Delay_Buffer[current_sample]+input_signal)>>1;
