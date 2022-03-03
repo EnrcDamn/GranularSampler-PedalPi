@@ -1,4 +1,4 @@
-// Granular Sampler / Delay
+// Granular sampler and delay for Raspberry Pedal Pi
 
 #include <bcm2835.h>
 #include <stdio.h>
@@ -38,7 +38,7 @@ uint32_t read_timer, delay;
 uint32_t playback_mode = 0;
 uint32_t record_length = 100;
 
-short LED_timer = 100;
+long LED_timer = 0;
  
 uint8_t FOOT_SWITCH_val;
 uint8_t TOGGLE_SWITCH_val;
@@ -68,11 +68,11 @@ int main(int argc, char **argv)
 	// Define PWM	
     bcm2835_gpio_fsel(18,BCM2835_GPIO_FSEL_ALT5 ); // PWM0 signal on GPIO18    
     bcm2835_gpio_fsel(13,BCM2835_GPIO_FSEL_ALT0 ); // PWM1 signal on GPIO13    
-	bcm2835_pwm_set_clock(2); // Max clk frequency (19.2MHz/2 = 9.6MHz)
+    bcm2835_pwm_set_clock(2); // Max clk frequency (19.2MHz/2 = 9.6MHz)
     bcm2835_pwm_set_mode(0,1 , 1); // channel 0, markspace mode, PWM enabled. 
-	bcm2835_pwm_set_range(0,64);   // channel 0, 64 is max range (6bits): 9.6MHz/64=150KHz switching PWM freq.
+    bcm2835_pwm_set_range(0,64);   // channel 0, 64 is max range (6bits): 9.6MHz/64=150KHz switching PWM freq.
     bcm2835_pwm_set_mode(1, 1, 1); // channel 1, markspace mode, PWM enabled.
-	bcm2835_pwm_set_range(1,64);   // channel 0, 64 is max range (6bits): 9.6MHz/64=150KHz switching PWM freq.
+    bcm2835_pwm_set_range(1,64);   // channel 0, 64 is max range (6bits): 9.6MHz/64=150KHz switching PWM freq.
  
 	// Define SPI bus configuration
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);      // The default
@@ -81,20 +81,20 @@ int main(int argc, char **argv)
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);                      // The default
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);      // the default
  
-   	uint8_t mosi[10] = { 0x01, 0x00, 0x00 }; // 12 bit ADC read 0x08 ch0, - 0c for ch1 
-	uint8_t miso[10] = { 0 };
+    uint8_t mosi[10] = { 0x01, 0x00, 0x00 }; // 12 bit ADC read 0x08 ch0, - 0c for ch1 
+    uint8_t miso[10] = { 0 };
  
     // Define GPIO pins configuration
     bcm2835_gpio_fsel(PUSH1, BCM2835_GPIO_FSEL_INPT); 			// PUSH1 button as input
-	bcm2835_gpio_fsel(PUSH2, BCM2835_GPIO_FSEL_INPT); 			// PUSH2 button as input
-	bcm2835_gpio_fsel(TOGGLE_SWITCH, BCM2835_GPIO_FSEL_INPT);	// TOGGLE_SWITCH as input
-	bcm2835_gpio_fsel(FOOT_SWITCH, BCM2835_GPIO_FSEL_INPT); 	// FOOT_SWITCH as input
-	bcm2835_gpio_fsel(LED, BCM2835_GPIO_FSEL_OUTP);				// LED as output
- 
+    bcm2835_gpio_fsel(PUSH2, BCM2835_GPIO_FSEL_INPT); 			// PUSH2 button as input
+    bcm2835_gpio_fsel(TOGGLE_SWITCH, BCM2835_GPIO_FSEL_INPT);	// TOGGLE_SWITCH as input
+    bcm2835_gpio_fsel(FOOT_SWITCH, BCM2835_GPIO_FSEL_INPT); 	// FOOT_SWITCH as input
+    bcm2835_gpio_fsel(LED, BCM2835_GPIO_FSEL_OUTP);				// LED as output
+
     bcm2835_gpio_set_pud(PUSH1, BCM2835_GPIO_PUD_UP);           // PUSH1 pull-up enabled   
-	bcm2835_gpio_set_pud(PUSH2, BCM2835_GPIO_PUD_UP);           // PUSH2 pull-up enabled 
-	bcm2835_gpio_set_pud(TOGGLE_SWITCH, BCM2835_GPIO_PUD_UP);   // TOGGLE_SWITCH pull-up enabled 
-	bcm2835_gpio_set_pud(FOOT_SWITCH, BCM2835_GPIO_PUD_UP);     // FOOT_SWITCH pull-up enabled 
+    bcm2835_gpio_set_pud(PUSH2, BCM2835_GPIO_PUD_UP);           // PUSH2 pull-up enabled 
+    bcm2835_gpio_set_pud(TOGGLE_SWITCH, BCM2835_GPIO_PUD_UP);   // TOGGLE_SWITCH pull-up enabled 
+    bcm2835_gpio_set_pud(FOOT_SWITCH, BCM2835_GPIO_PUD_UP);     // FOOT_SWITCH pull-up enabled 
  
     // Main Loop
     while(1)
@@ -154,47 +154,26 @@ int main(int argc, char **argv)
 
             else
             {
-                if (PUSH2_val==0)
+                if (PUSH1_val == PRESSED)
                 {
-                    bcm2835_delay(100); // 100ms delay for buttons debouncing. 
-                    speed+=5;
-                    printf("Pitching up\n");
+                    // Adjust delay
                 }
-                if (PUSH1_val==0) 
+                if (PUSH2_val == PRESSED) 
                 { 	
-                    bcm2835_delay(100); // 100ms delay for buttons debouncing. 
-                    speed-=5;
-                    printf("Pitching down\n");
+                    //bcm2835_delay(100); // 100ms delay for buttons debouncing. 
+                    // Time stretching
                 }
             }
         }
-
-        //**** TRIANGULAR SIGNAL GENERATOR ***///
-        // Nothing to do, the input_signal goes directly to the PWM output.
-    
-        code_delay++;
-        if (1)
-        {
-        code_delay = 0;
-        if (up == TRUE)
-        input_signal = input_signal + speed;
-        else 
-        input_signal = input_signal - speed;
-    
-        if (input_signal > 4096 - speed) up = FALSE;
-        if (input_signal < 0 + speed) up = TRUE;
-        }
-        
 
 
         //**** MODE 1: SAMPLER ***///
 
         // LOOP ACTIVATE - DEACTIVATE
-
         if (recording == TRUE)
         {   
             // Start recording
-            LED_blinking == TRUE;
+            LED_blinking = TRUE;
             LED_timer--;
             Delay_Buffer[current_sample] = input_signal;
             current_sample++;
@@ -203,8 +182,9 @@ int main(int argc, char **argv)
             // Led in blinking mode while recording
             if (LED_blinking && LED_timer < 0)
             {   
-                bcm2835_gpio_write(LED, !LED_value);
-                LED_timer = 100;
+		        LED_value = !LED_value;
+                bcm2835_gpio_write(LED, LED_value);
+                LED_timer = 10000; // 0.2 seconds
             }
             if(current_sample >= DELAY_MAX) current_sample = 0; 
         }
