@@ -65,7 +65,7 @@ int main(int argc, char **argv)
       return 1;
     }
  
-	// Define PWM	
+    // Define PWM	
     bcm2835_gpio_fsel(18,BCM2835_GPIO_FSEL_ALT5 ); // PWM0 signal on GPIO18    
     bcm2835_gpio_fsel(13,BCM2835_GPIO_FSEL_ALT0 ); // PWM1 signal on GPIO13    
     bcm2835_pwm_set_clock(2); // Max clk frequency (19.2MHz/2 = 9.6MHz)
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     bcm2835_pwm_set_mode(1, 1, 1); // channel 1, markspace mode, PWM enabled.
     bcm2835_pwm_set_range(1,64);   // channel 0, 64 is max range (6bits): 9.6MHz/64=150KHz switching PWM freq.
  
-	// Define SPI bus configuration
+    // Define SPI bus configuration
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);      // The default
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                   // The default
     bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64); 	  // 4MHz clock with _64 
