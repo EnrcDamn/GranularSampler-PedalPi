@@ -1,3 +1,5 @@
+// Granular Sampler / Delay
+
 #include <bcm2835.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,10 +17,11 @@
 
 
 // Define Delay Effect parameters: 50000 is 1 second approx.
-#define DELAY_MAX 250000 //5 seconds
+#define DELAY_MAX 250000 // 5 seconds
 #define DELAY_MIN 0
 
 long current_sample = 0;
+
 uint32_t Delay_Buffer[DELAY_MAX];
 uint32_t sample_is_randomized = FALSE; // Randomize flag
 uint32_t grain_counter = 0;
@@ -26,24 +29,26 @@ uint32_t max_grain_size = 25000; // 0.5 seconds
 uint32_t min_grain_size = 500;
 uint32_t grain_size = 0;
 uint32_t random_start = 0;
-
 uint32_t input_signal = 0;
 uint32_t speed = 20;
-uint32_t up = 1;
+uint32_t up = TRUE;
 uint32_t code_delay = 0;
 uint32_t output_signal = 0;
 uint32_t read_timer, delay;
-uint32_t recording = FALSE;
 uint32_t playback_mode = 0;
-uint32_t record_lenght = 100;
+uint32_t record_length = 100;
+
+short LED_timer = 100;
  
 uint8_t FOOT_SWITCH_val;
 uint8_t TOGGLE_SWITCH_val;
 uint8_t PUSH1_val;
 uint8_t is_PUSH1_pressed;
 uint8_t PUSH2_val;
-uint8_t is_PUSH2_pressed;
+uint8_t recording = FALSE;
 uint8_t is_reversed = FALSE; // randomly choose TRUE or FALSE
+uint8_t LED_blinking = FALSE;
+uint8_t LED_value = TRUE;
  
 int main(int argc, char **argv)
 {
@@ -123,7 +128,7 @@ int main(int argc, char **argv)
                     {
                         recording = FALSE;
                         printf("Stopped recording.\n");
-                        record_lenght = current_sample;
+                        record_length = current_sample;
                         current_sample = 0;
                     }
                     else 
@@ -164,20 +169,20 @@ int main(int argc, char **argv)
             }
         }
 
-        //**** TRIANGULAR SIGNAL GENERATOR (for testing purposes) ***///
-        // The input_signal goes directly to the PWM output.
+        //**** TRIANGULAR SIGNAL GENERATOR ***///
+        // Nothing to do, the input_signal goes directly to the PWM output.
     
         code_delay++;
         if (1)
         {
-        code_delay=0;
-        if (up==1)
-        input_signal=input_signal+speed;
+        code_delay = 0;
+        if (up == TRUE)
+        input_signal = input_signal + speed;
         else 
-        input_signal=input_signal-speed;
+        input_signal = input_signal - speed;
     
-        if (input_signal>4096-speed) up=0;
-        if (input_signal<0+ speed) up=1;
+        if (input_signal > 4096 - speed) up = FALSE;
+        if (input_signal < 0 + speed) up = TRUE;
         }
         
 
@@ -189,26 +194,34 @@ int main(int argc, char **argv)
         if (recording == TRUE)
         {   
             // Start recording
+            LED_blinking == TRUE;
+            LED_timer--;
             Delay_Buffer[current_sample] = input_signal;
             current_sample++;
             output_signal = input_signal;
-            //bcm2835_gpio_write(LED, 1);
+
+            // Led in blinking mode while recording
+            if (LED_blinking && LED_timer < 0)
+            {   
+                bcm2835_gpio_write(LED, !LED_value);
+                LED_timer = 100;
+            }
             if(current_sample >= DELAY_MAX) current_sample = 0; 
         }
         else 
         {   
             // PLAYBACK MODES (normal, granular, reversed)
-
+            LED_blinking == FALSE;
             if (playback_mode == 0)
             {   
                 // Normal playback
                 output_signal = (Delay_Buffer[current_sample]+input_signal)>>1;
                 current_sample++;
-                if (current_sample > record_lenght) current_sample=0;
+                if (current_sample > record_length) current_sample=0;
             }
             else if (playback_mode == 1)
             {   
-                // Random granular delay
+                // Randomly chosen and reversed grains
                 grain_counter++;
                 if (!sample_is_randomized)
                 {   
@@ -231,21 +244,21 @@ int main(int argc, char **argv)
                 {
                     output_signal = (Delay_Buffer[current_sample] + input_signal)>>1;
                     current_sample--;
-                    if (current_sample < 0) current_sample = record_lenght-1;
+                    if (current_sample < 0) current_sample = record_length-1;
                 }
                 else
                 {
                     output_signal = (Delay_Buffer[current_sample] + input_signal)>>1;
                     current_sample++;
-                    if (current_sample > record_lenght) current_sample = 0;
+                    if (current_sample > record_length) current_sample = 0;
                 }
                 
             }
             else
             {
-                // Reversed playback
+                // Reverse all signal
                 sample_is_randomized = FALSE; // Reset randomized flag
-                if (current_sample < 0) current_sample = record_lenght-1;
+                if (current_sample < 0) current_sample = record_length-1;
                 output_signal = (Delay_Buffer[current_sample]+input_signal)>>1;
                 current_sample--;
             }
