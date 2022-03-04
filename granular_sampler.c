@@ -15,6 +15,7 @@
 #define FALSE 0
 #define PRESSED 0
 
+#define SAMPLE_RATE 50000 // 50kSPS
 
 // Define Delay Effect parameters: 50000 is 1 second approx.
 #define DELAY_MAX 250000 // 5 seconds
