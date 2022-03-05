@@ -253,7 +253,7 @@ int main(int argc, char **argv)
             else if (playback_mode == 1)
             {   
                 // Randomly chosen and reversed grains
-                grain_counter++;
+                /*grain_counter++;
                 if (grain_counter >= grain_size) 
                 {
                     grain_size = rand() % (max_grain_size - min_grain_size + 1) + min_grain_size;
@@ -267,14 +267,14 @@ int main(int argc, char **argv)
                 {
                     output_signal = (Delay_Buffer[current_sample] + input_signal)>>1;
                     current_sample--;
-                    if (current_sample < 0) current_sample = DELAY_MAX - 1;
+                    if (current_sample < 0) current_sample = record_length-1;
                 }
                 else
                 {
                     output_signal = (Delay_Buffer[current_sample] + input_signal)>>1;
                     current_sample++;
-                    if (current_sample > DELAY_MAX) current_sample = 0;
-                }
+                    if (current_sample > record_length) current_sample = 0;
+                }*/
             }
             else
             {
