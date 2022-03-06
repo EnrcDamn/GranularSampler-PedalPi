@@ -50,7 +50,6 @@ uint32_t Echo_Buffer[DELAY_MAX];
 uint32_t delay_counter = 0;
 uint32_t Delay_Depth = 25000; // 0.5 seconds
 
-uint8_t LED_val;
 uint8_t FOOT_SWITCH_val;
 uint8_t TOGGLE_SWITCH_val;
 uint8_t PUSH1_val;
