@@ -133,9 +133,20 @@ int main(int argc, char **argv)
     bcm2835_gpio_set_pud(TOGGLE_SWITCH, BCM2835_GPIO_PUD_UP);   // TOGGLE_SWITCH pull-up enabled 
     bcm2835_gpio_set_pud(FOOT_SWITCH, BCM2835_GPIO_PUD_UP);     // FOOT_SWITCH pull-up enabled 
 
+    sample_rate = 1000000 / microseconds_delay; // Initialized at 50 kHz
+    double time_spent = 0.0;
+
     // Main Loop
     while(TRUE)
 	{   
+        if (read_timer == sample_rate-1)
+        {
+            printf("%f\n", time_spent);
+            time_spent = 0;
+        }
+        // to store the execution time of code
+        clock_t begin = clock();
+
         // Read the FOOT_SWITCH value
         if (FOOT_SWITCH_val == PRESSED)
         {   
@@ -148,7 +159,7 @@ int main(int argc, char **argv)
 
             // Read the PUSH buttons approx. every 0.2 seconds to save resources
             read_timer++;
-            if (read_timer >= sample_rate / 5)
+            if (read_timer >= sample_rate)
             {
                 read_timer = 0;
                 PUSH1_val = bcm2835_gpio_lev(PUSH1);
@@ -168,7 +179,8 @@ int main(int argc, char **argv)
                     { 	
                         is_PUSH1_pressed = FALSE;
                         if (recording == TRUE)
-                        {
+                        {   
+                            microseconds_delay = 20;
                             recording = FALSE;
                             printf("Stopped recording.\n");
                             ending_sample = current_sample;
@@ -182,7 +194,8 @@ int main(int argc, char **argv)
                             current_sample = starting_sample;
                         }
                         else if (recording == FALSE)
-                        {
+                        {   
+                            microseconds_delay = 20;
                             recording = TRUE;
                             printf("Recording...\n");
                             current_sample = 0;
@@ -230,10 +243,7 @@ int main(int argc, char **argv)
 
             if (recording == TRUE)
             {   
-                // to store the execution time of code
-                double time_spent = 0.0;
-                clock_t begin = clock();
-                microseconds_delay = 20;
+                
 
                 // Start recording
                 LED_blinking = TRUE;
@@ -247,12 +257,7 @@ int main(int argc, char **argv)
                     current_sample = 0;
                 }
 
-                clock_t end = clock();
- 
-                // calculate elapsed time by finding difference (end - begin) and
-                // dividing the difference by CLOCKS_PER_SEC to convert to seconds
-                time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-                //printf("The elapsed time is %f seconds\n", time_spent);
+                
 
                 
                 // Led in blinking mode while recording
@@ -331,6 +336,7 @@ int main(int argc, char **argv)
                     }
                 }
             }
+                
 
             //**** MODE 2: OUTPUT TIME STRETCHING ***///
 
@@ -339,6 +345,13 @@ int main(int argc, char **argv)
             bcm2835_delayMicroseconds(microseconds_delay);
             bcm2835_pwm_set_data(1,output_signal & 0x3F);
             bcm2835_pwm_set_data(0,output_signal >> 6);
+
+            clock_t end = clock();
+ 
+                // calculate elapsed time by finding difference (end - begin) and
+                // dividing the difference by CLOCKS_PER_SEC to convert to seconds
+                time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
+                //printf("The elapsed time is %f seconds\n", time_spent);
             
         }
 
