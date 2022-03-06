@@ -18,8 +18,6 @@
 #define FALSE 0
 #define PRESSED 0
 
-#define SAMPLE_RATE 50000 // 50kSPS
-
 // Define effect parameters: 50000 is 1 second approx.
 #define LOOP_MAX 250000 // 5 seconds
 
@@ -46,6 +44,7 @@ uint32_t playback_mode = 0;
 uint32_t starting_sample = 0;
 uint32_t ending_sample = LOOP_MAX - 1;
 uint32_t microseconds_delay = 20; // 20 microseconds
+uint32_t sample_rate; // 50 kHz
 
 uint32_t Echo_Buffer[DELAY_MAX];
 uint32_t delay_counter = 0;
@@ -91,8 +90,6 @@ static void build_sine_table(int16_t *data, int wave_length)
  
 int main(int argc, char **argv)
 {   
-    
-
     // Start the BCM2835 Library to access GPIO.
     if (!bcm2835_init())
     {
@@ -139,22 +136,20 @@ int main(int argc, char **argv)
 
     // Main Loop
     while(TRUE)
-	{
-
-        
+	{   
         // Read the FOOT_SWITCH value
         if (FOOT_SWITCH_val == PRESSED)
         {   
-            // Add a delay of 20 microseconds (run frequency = 50kHz)
-            bcm2835_delayMicroseconds(20);
 
             // Read 12 bits ADC
             bcm2835_spi_transfernb(mosi, miso, 3);
-            input_signal = miso[2] + ((miso[1] & 0x0F) << 8); 
+            input_signal = miso[2] + ((miso[1] & 0x0F) << 8);
+
+            sample_rate = 1000000 / microseconds_delay; // Initialized at 50 kHz
 
             // Read the PUSH buttons approx. every 0.2 seconds to save resources
             read_timer++;
-            if (read_timer >= SAMPLE_RATE / 5)
+            if (read_timer >= sample_rate / 5)
             {
                 read_timer = 0;
                 PUSH1_val = bcm2835_gpio_lev(PUSH1);
@@ -219,12 +214,12 @@ int main(int argc, char **argv)
                     if (PUSH1_val == PRESSED)
                     {
                         bcm2835_delay(100); // 100ms delay for buttons debouncing
-                        if (microseconds_delay <= TIMESTRETCH_MAX) microseconds_delay = microseconds_delay * 2;
+                        if (microseconds_delay < TIMESTRETCH_MAX) microseconds_delay = microseconds_delay * 2;
                     }
                     if (PUSH2_val == PRESSED) 
                     { 	
                         bcm2835_delay(100); // 100ms delay for buttons debouncing
-                        if (microseconds_delay >= TIMESTRETCH_MIN) microseconds_delay = microseconds_delay / 2;
+                        if (microseconds_delay > TIMESTRETCH_MIN) microseconds_delay = microseconds_delay / 2;
                     }
                 }
             
@@ -239,7 +234,6 @@ int main(int argc, char **argv)
                 // to store the execution time of code
                 double time_spent = 0.0;
                 clock_t begin = clock();
-
                 microseconds_delay = 20;
 
                 // Start recording
@@ -267,7 +261,7 @@ int main(int argc, char **argv)
                 {   
                     is_LED_on = !is_LED_on;
                     bcm2835_gpio_write(LED, is_LED_on);
-                    LED_timer = SAMPLE_RATE / 5; // 0.2 seconds
+                    LED_timer = sample_rate / 5; // 0.2 seconds
                 }
             }
 
@@ -342,10 +336,11 @@ int main(int argc, char **argv)
             //**** MODE 2: OUTPUT TIME STRETCHING ***///
 
             // Generate output PWM signal (2 x 6 bits) depending on frequency rate
-
+            // Add a delay of 20 microseconds (run frequency = 50kHz)
+            bcm2835_delayMicroseconds(microseconds_delay);
             bcm2835_pwm_set_data(1,output_signal & 0x3F);
             bcm2835_pwm_set_data(0,output_signal >> 6);
-            bcm2835_delayMicroseconds(microseconds_delay);
+            
         }
 
         else FOOT_SWITCH_val = bcm2835_gpio_lev(FOOT_SWITCH);
