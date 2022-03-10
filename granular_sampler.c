@@ -205,17 +205,17 @@ int main(int argc, char **argv)
                         playback_mode++;
                         if (playback_mode > 2) playback_mode = 0;
 
-                        if (playback_mode==0) printf("Normal playback (%d)\n", playback_mode);
+                        if (playback_mode==0) printf("Playback: normal (%d)\n", playback_mode);
                         else if (playback_mode==1)
                         {
-                            printf("Random granular playback (%d)\n", playback_mode);
+                            printf("Playback: granular (%d)\n", playback_mode);
                             grain_size = rand() % (max_grain_size - min_grain_size + 1) + min_grain_size;
                             grain_counter = 0;
                             is_reversed = rand() % 2;
                             random_start = (rand() % 250) * 1000;
                             sample_write = random_start;
                         }
-                        else printf("Reversed playback (%d)\n", playback_mode);
+                        else printf("Playback: reverse (%d)\n", playback_mode);
                     }
                 }
                 else
