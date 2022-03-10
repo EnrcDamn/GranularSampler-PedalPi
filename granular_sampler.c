@@ -24,13 +24,16 @@
 #define DELAY_MAX 50000
 #define DELAY_MIN 0
 
-#define TIMESTRETCH_MAX 80
-#define TIMESTRETCH_MIN 5
-
 long LED_timer = 0;
-long current_sample = 0;
+long sample_write = 0;
+long microseconds_delay = 20; // 20 microseconds
+
+double time_spent = 0.0;
+float pitch = 1.0f;
+float sample_read = 0.0;
 
 uint32_t Loop_Buffer[LOOP_MAX];
+uint32_t Pitch_Playback[LOOP_MAX];
 uint32_t sample_is_randomized = FALSE; // Randomize flag
 uint32_t grain_counter = 0;
 uint32_t max_grain_size = 25000; // 0.5 seconds
@@ -43,7 +46,7 @@ uint32_t read_timer = 0;
 uint32_t playback_mode = 0;
 uint32_t starting_sample = 0;
 uint32_t ending_sample = LOOP_MAX - 1;
-uint32_t microseconds_delay = 20; // 20 microseconds
+uint32_t run_time_microsec = 0;
 uint32_t sample_rate; // 50 kHz
 
 uint32_t Echo_Buffer[DELAY_MAX];
@@ -60,7 +63,6 @@ uint8_t is_reversed = FALSE; // randomly choose TRUE or FALSE
 uint8_t is_PUSH1_pressed;
 uint8_t is_LED_on = FALSE;
 uint8_t is_buffer_maxed_out = FALSE;
-uint8_t time_stretching = FALSE;
 
 
 /*
@@ -134,16 +136,11 @@ int main(int argc, char **argv)
     bcm2835_gpio_set_pud(FOOT_SWITCH, BCM2835_GPIO_PUD_UP);     // FOOT_SWITCH pull-up enabled 
 
     sample_rate = 1000000 / microseconds_delay; // Initialized at 50 kHz
-    double time_spent = 0.0;
+    microseconds_delay = microseconds_delay - run_time_microsec;
 
     // Main Loop
     while(TRUE)
 	{   
-        if (read_timer == sample_rate-1)
-        {
-            printf("%f\n", time_spent);
-            time_spent = 0;
-        }
         // to store the execution time of code
         clock_t begin = clock();
 
@@ -159,7 +156,7 @@ int main(int argc, char **argv)
 
             // Read the PUSH buttons approx. every 0.2 seconds to save resources
             read_timer++;
-            if (read_timer >= sample_rate)
+            if (read_timer >= sample_rate / 5)
             {
                 read_timer = 0;
                 PUSH1_val = bcm2835_gpio_lev(PUSH1);
@@ -180,25 +177,25 @@ int main(int argc, char **argv)
                         is_PUSH1_pressed = FALSE;
                         if (recording == TRUE)
                         {   
-                            microseconds_delay = 20;
+                            pitch = 1.0f;
                             recording = FALSE;
                             printf("Stopped recording.\n");
-                            ending_sample = current_sample;
-                            if (current_sample >= LOOP_MAX - 1) starting_sample = 0;
+                            ending_sample = sample_write;
+                            if (sample_write >= LOOP_MAX - 1) starting_sample = 0;
                             else
                             {
                                 if (is_buffer_maxed_out) starting_sample = ending_sample + 1;
                                 else starting_sample = 0;
                             }
                             is_buffer_maxed_out = FALSE;
-                            current_sample = starting_sample;
+                            sample_write = starting_sample;
                         }
                         else if (recording == FALSE)
                         {   
-                            microseconds_delay = 20;
+                            pitch = 1.0f;
                             recording = TRUE;
                             printf("Recording...\n");
-                            current_sample = 0;
+                            sample_write = 0;
                             is_buffer_maxed_out = FALSE;
                         }
                     }
@@ -216,22 +213,35 @@ int main(int argc, char **argv)
                             grain_counter = 0;
                             is_reversed = rand() % 2;
                             random_start = (rand() % 250) * 1000;
-                            current_sample = random_start;
+                            sample_write = random_start;
                         }
                         else printf("Reversed playback (%d)\n", playback_mode);
                     }
                 }
                 else
                 {
-                    if (PUSH1_val == PRESSED)
+                    /*if (PUSH1_val == PRESSED)
                     {
                         bcm2835_delay(100); // 100ms delay for buttons debouncing
-                        if (microseconds_delay < TIMESTRETCH_MAX) microseconds_delay = microseconds_delay * 2;
+                        run_time_microsec = time_spent * 1000000;
+                        microseconds_delay = (microseconds_delay) * 2 - run_time_microsec;
                     }
                     if (PUSH2_val == PRESSED) 
                     { 	
                         bcm2835_delay(100); // 100ms delay for buttons debouncing
-                        if (microseconds_delay > TIMESTRETCH_MIN) microseconds_delay = microseconds_delay / 2;
+                        run_time_microsec = time_spent * 1000000;
+                        microseconds_delay = (microseconds_delay) / 2 - run_time_microsec;
+                    }*/
+
+                    if (PUSH1_val == PRESSED)
+                    {
+                        bcm2835_delay(100); // 100ms delay for buttons debouncing
+                        if (pitch > 0.5) pitch -= 0.25;
+                    }
+                    if (PUSH2_val == PRESSED) 
+                    { 	
+                        bcm2835_delay(100); // 100ms delay for buttons debouncing
+                        if (pitch < 2.0) pitch += 0.25;
                     }
                 }
             
@@ -248,13 +258,13 @@ int main(int argc, char **argv)
                 // Start recording
                 LED_blinking = TRUE;
                 LED_timer--;
-                Loop_Buffer[current_sample] = input_signal;
-                current_sample++;
+                Loop_Buffer[sample_write] = input_signal;
+                sample_write++;
                 output_signal = input_signal;
-                if (current_sample >= LOOP_MAX) 
+                if (sample_write >= LOOP_MAX) 
                 {
                     is_buffer_maxed_out = TRUE;
-                    current_sample = 0;
+                    sample_write = 0;
                 }
 
                 
@@ -278,14 +288,15 @@ int main(int argc, char **argv)
                 {   
                     // NORMAL PLAYBACK
 
-                    output_signal = (Loop_Buffer[current_sample] + input_signal) >> 1;
-                    current_sample++;
-                    if (current_sample == ending_sample) {
-                    current_sample = starting_sample;
+                    output_signal = (Loop_Buffer[(uint32_t)sample_read] + input_signal) >> 1;
+                    // Pitch shifting
+                    sample_read += pitch;
+                    if (sample_read == ending_sample) {
+                    sample_read = starting_sample;
                     }
                     else 
                     {
-                        if (current_sample >= LOOP_MAX) current_sample = 0;
+                        if (sample_read >= LOOP_MAX) sample_read = 0;
                     }
                 }
                 else if (playback_mode == 1)
@@ -300,59 +311,54 @@ int main(int argc, char **argv)
                         grain_counter = 0;
                         is_reversed = rand() % 2;
                         random_start = (rand() % 250) * 1000;
-                        current_sample = random_start;
+                        sample_read = random_start;
                     }
 
                     // 2) randomly reversing grains
                     if (is_reversed)
                     {
-                        output_signal = (Loop_Buffer[current_sample] + input_signal);
-                        current_sample--;
-                        if (current_sample < 0) current_sample = LOOP_MAX - 1;
+                        output_signal = (Loop_Buffer[(uint32_t)sample_read] + input_signal);
+                        // Pitch shifting
+                        sample_read -= pitch;
+                        if (sample_read < 0) sample_read = LOOP_MAX - 1;
                     }
                     else
                     {
-                        output_signal = (Loop_Buffer[current_sample] + input_signal);
-                        current_sample++;
-                        if (current_sample > LOOP_MAX) current_sample = 0;
+                        output_signal = (Loop_Buffer[(uint32_t)sample_read] + input_signal);
+                        // Pitch shifting
+                        sample_read += pitch;
+                        if (sample_read > LOOP_MAX) sample_read = 0;
                     }
 
                     // 3) delay effect
-                    Echo_Buffer[delay_counter]  = (output_signal + Echo_Buffer[delay_counter])>>1;
+                    Echo_Buffer[delay_counter]  = (output_signal + Echo_Buffer[delay_counter]) >> 2;
                     delay_counter++;	
 	                if(delay_counter >= Delay_Depth) delay_counter = 0; 
-                    output_signal = (output_signal + (Echo_Buffer[delay_counter]))>>1;
+                    output_signal = (output_signal + (Echo_Buffer[delay_counter])) >> 1;
                 }
                 else
                 {
                     // REVERSE ALL SIGNAL
 
-                    output_signal = (Loop_Buffer[current_sample] + input_signal) >> 1;
-                    current_sample--;
-                    if (current_sample == starting_sample) current_sample = ending_sample;
+                    output_signal = (Loop_Buffer[(uint32_t)sample_read] + input_signal) >> 1;
+                    // Pitch shifting
+                    sample_read -= pitch;
+                    if (sample_read == starting_sample) sample_read = ending_sample;
                     else
                     {
-                        if (current_sample <= 0) current_sample = LOOP_MAX - 1;
+                        if (sample_read <= 0) sample_read = LOOP_MAX - 1;
                     }
                 }
             }
-                
 
-            //**** MODE 2: OUTPUT TIME STRETCHING ***///
+            clock_t end = clock();
+            time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 
             // Generate output PWM signal (2 x 6 bits) depending on frequency rate
             // Add a delay of 20 microseconds (run frequency = 50kHz)
             bcm2835_delayMicroseconds(microseconds_delay);
             bcm2835_pwm_set_data(1,output_signal & 0x3F);
             bcm2835_pwm_set_data(0,output_signal >> 6);
-
-            clock_t end = clock();
- 
-                // calculate elapsed time by finding difference (end - begin) and
-                // dividing the difference by CLOCKS_PER_SEC to convert to seconds
-                time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-                //printf("The elapsed time is %f seconds\n", time_spent);
-            
         }
 
         else FOOT_SWITCH_val = bcm2835_gpio_lev(FOOT_SWITCH);
