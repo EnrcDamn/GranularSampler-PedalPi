@@ -53,3 +53,4 @@ dkms.conf
 
 
 test.c
+function_test.c
