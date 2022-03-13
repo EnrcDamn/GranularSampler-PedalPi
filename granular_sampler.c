@@ -1,4 +1,4 @@
-// Granulator delay / micro-sampler for Raspberry Pedal Pi
+// Granular delay / micro-sampler for Raspberry Pedal Pi
 // https://github.com/EnrcDamn/granular-sampler-pedal-pi
 
 
@@ -67,7 +67,7 @@ typedef struct {
     uint32_t grain_size;
     uint32_t random_start;
     uint8_t is_reversed;
-} Granulator;
+} Granular;
 
 typedef struct {
     uint32_t* Echo_Buffer;
@@ -86,7 +86,7 @@ void updateOsc(Oscillator* osc)
 int init(
     BoardStatus* board,
     BufferStatus* buff,
-    Granulator* gran,
+    Granular* gran,
     Delay* delay,
     Oscillator* lfo)
 {
@@ -189,7 +189,7 @@ void readControls(BoardStatus* board)
 void setControls(
     BoardStatus* board,
     BufferStatus* buff,
-    Granulator* gran)
+    Granular* gran)
 {   
     readControls(board);
     // Read the controls approx. every 0.2 seconds to save resources
@@ -326,7 +326,7 @@ void _granularPlayback(
     uint32_t* input_signal,
     uint32_t* output_signal,
     BufferStatus* buff,
-    Granulator* gran,
+    Granular* gran,
     Delay* delay)
 {   
     uint32_t* Loop_Buffer = buff->Loop_Buffer;
@@ -387,7 +387,7 @@ void processSignal(
     uint32_t* output_signal,
     BoardStatus* board,
     BufferStatus* buff,
-    Granulator* gran,
+    Granular* gran,
     Delay* delay)
 {
     //***** MODE 1: SAMPLER *****///
@@ -422,7 +422,7 @@ int main(int argc, char **argv)
 
     BoardStatus board; // Hardware status
     BufferStatus buff; // Buffer structure
-    Granulator gran; // Granular parameters
+    Granular gran; // Granular parameters
     Delay delay; // Delay parameters
     Oscillator lfo; // Sine wave LFO
 
