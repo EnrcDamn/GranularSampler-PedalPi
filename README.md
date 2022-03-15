@@ -24,7 +24,7 @@ The effect is divided into two communicating stages, that will affect each other
 
         1) **Normal**: the recording starts looping back as it is.
 
-        2) **Granular delay**: the most fun and unpredictable mode, this will break, freeze and scatter the stored audio into little pieces. The size, position and playback of the grains is sometimes randomized, sometimes controlled by an LFO. There's also an always-on delay effect on top of the granular loop, to help diffuse the sound into a denser texture.
+        2) **Granular Delay**: the most fun and unpredictable mode, this will break, freeze and scatter the stored audio into little pieces. The size, position and playback of the grains is sometimes randomized, sometimes controlled by an LFO. There's also an always-on delay effect on top of the granular loop, to help diffuse the sound into a denser texture.
 
         3) **Reversed**: inspired by reel-to-reel tape machines, this will reverse the entire looping. Works really well with half-speed playback.
 
