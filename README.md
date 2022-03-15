@@ -31,7 +31,7 @@ The effect is divided into two communicating stages, that will affect each other
 
 2) When the `TOGGLE_SWITCH` is in "DOWN" position, you will enter the *clock* channel. 
 
-    This control will affect the clock rate, so it's directly linked to the playback speed (for example if you set the pitch one octave below, it will halve the clock rate and consequentely the playback speed). This will produce some interesting glitchy effects, due to the lo-fi nature of the 12-bit ADC.
+    This control will affect the clock rate, so it's directly linked to the playback speed of your recorded piece of audio (for example if you set the pitch one octave below, it will halve the clock rate and consequentely the playback speed). This will produce some interesting glitchy effects, due to the lo-fi nature of the 12-bit ADC.
     You can adjust the speed only in pre-defined harmonic steps of 3rds, perfect 5ths and octaves.
     
     * `PUSH_1`: 
