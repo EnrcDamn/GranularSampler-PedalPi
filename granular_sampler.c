@@ -57,17 +57,17 @@ typedef struct {
 typedef struct {
     float phase;
     float phase_stride; // phase increment for every time step
-    float lfo_rate;
+    float rate;
 } Oscillator;
 
 typedef struct {
-    uint32_t grain_counter;
-    uint32_t max_grain_size;
-    uint32_t min_grain_size;
-    uint32_t grain_size;
-    uint32_t random_start;
+    uint32_t index;
+    uint32_t max_size;
+    uint32_t min_size;
+    uint32_t size;
+    uint32_t position;
     uint8_t is_reversed;
-} Granular;
+} Grain;
 
 typedef struct {
     uint32_t* Echo_Buffer;
@@ -86,7 +86,7 @@ void updateOsc(Oscillator* osc)
 int init(
     BoardStatus* board,
     BufferStatus* buff,
-    Granular* gran,
+    Grain* grain,
     Delay* delay,
     Oscillator* lfo)
 {
@@ -151,19 +151,19 @@ int init(
     buff->sample_write = 0;
     buff->pitch = 1.0f;
 
-    gran->grain_counter = 0;
-    gran->max_grain_size = 25000; // 0.5 seconds
-    gran->min_grain_size = 500;
-    gran->grain_size = 0;
-    gran->random_start = 0;
-    gran->is_reversed = FALSE; // randomly choose TRUE or FALSE
+    grain->index = 0;
+    grain->max_size = 25000; // 0.5 seconds
+    grain->min_size = 500;
+    grain->size = 0;
+    grain->position = 0;
+    grain->is_reversed = FALSE; // randomly choose TRUE or FALSE
 
     delay->Echo_Buffer = (uint32_t*)calloc(DELAY_MAX, sizeof(uint32_t));
     delay->delay_index = 0;
 
     lfo->phase = 0.0f;
-    lfo->lfo_rate = 1.0f;
-    lfo->phase_stride = lfo->lfo_rate * sample_duration;
+    lfo->rate = 1.0f;
+    lfo->phase_stride = lfo->rate * sample_duration;
 
     return 0;
 }
@@ -189,7 +189,7 @@ void readControls(BoardStatus* board)
 void setControls(
     BoardStatus* board,
     BufferStatus* buff,
-    Granular* gran)
+    Grain* grain)
 {   
     readControls(board);
     // Read the controls approx. every 0.2 seconds to save resources
@@ -246,11 +246,11 @@ void setControls(
                 else if (buff->playback_mode == 1)
                 {
                     printf("Playback: granular (%d)\n", buff->playback_mode);
-                    gran->grain_size = rand() % (gran->max_grain_size - gran->min_grain_size + 1) + gran->min_grain_size;
-                    gran->grain_counter = 0;
-                    gran->is_reversed = rand() % 2;
-                    gran->random_start = (rand() % 250) * 1000;
-                    buff->sample_write = gran->random_start;
+                    grain->size = rand() % (grain->max_size - grain->min_size + 1) + grain->min_size;
+                    grain->index = 0;
+                    grain->is_reversed = rand() % 2;
+                    grain->position = (rand() % 250) * 1000;
+                    buff->sample_write = grain->position;
                 }
                 else
                     printf("Playback: reverse (%d)\n", buff->playback_mode);
@@ -326,23 +326,23 @@ void _granularPlayback(
     uint32_t* input_signal,
     uint32_t* output_signal,
     BufferStatus* buff,
-    Granular* gran,
+    Grain* grain,
     Delay* delay)
 {   
     uint32_t* Loop_Buffer = buff->Loop_Buffer;
     // GRANULAR MICRO-DELAY
     // 1) Generating grains out of loop
-    gran->grain_counter++;
-    if (gran->grain_counter >= gran->grain_size) 
+    grain->index++;
+    if (grain->index >= grain->size) 
     {
-        gran->grain_size = rand() % (gran->max_grain_size - gran->min_grain_size + 1) + gran->min_grain_size;
-        gran->grain_counter = 0;
-        gran->is_reversed = rand() % 2;
-        gran->random_start = (rand() % 250) * 1000;
-        buff->sample_read = gran->random_start;
+        grain->size = rand() % (grain->max_size - grain->min_size + 1) + grain->min_size;
+        grain->index = 0;
+        grain->is_reversed = rand() % 2;
+        grain->position = (rand() % 250) * 1000;
+        buff->sample_read = grain->position;
     }
     // 2) Randomly reversing grains
-    if (gran->is_reversed)
+    if (grain->is_reversed)
     {
         *output_signal = (Loop_Buffer[(uint32_t)buff->sample_read] + *input_signal);
         // Pitch shifting
@@ -387,7 +387,7 @@ void processSignal(
     uint32_t* output_signal,
     BoardStatus* board,
     BufferStatus* buff,
-    Granular* gran,
+    Grain* grain,
     Delay* delay)
 {
     //***** MODE 1: SAMPLER *****///
@@ -405,7 +405,7 @@ void processSignal(
             _normalPlayback(input_signal, output_signal, buff);
 
         else if (buff->playback_mode == 1)
-            _granularPlayback(input_signal, output_signal, buff, gran, delay);
+            _granularPlayback(input_signal, output_signal, buff, grain, delay);
 
         else
             _reversedPlayback(input_signal, output_signal, buff);
@@ -422,23 +422,23 @@ int main(int argc, char **argv)
 
     BoardStatus board; // Hardware status
     BufferStatus buff; // Buffer structure
-    Granular gran; // Granular parameters
+    Grain grain; // Granular parameters
     Delay delay; // Delay parameters
     Oscillator lfo; // Sine wave LFO
 
-    init(&board, &buff, &gran, &delay, &lfo);
+    init(&board, &buff, &grain, &delay, &lfo);
 
     // Main Loop
     while(TRUE)
 	{   
-        setControls(&board, &buff, &gran);
+        setControls(&board, &buff, &grain);
         
         // Read the FOOT_SWITCH value
         if (board.FOOT_SWITCH_val == PRESSED)
         {
             readInputSignal(&input_signal);
 
-            processSignal(&input_signal, &output_signal, &board, &buff, &gran, &delay);
+            processSignal(&input_signal, &output_signal, &board, &buff, &grain, &delay);
 
             // Add a delay of 20 microseconds (run freq = 50kHz)
             bcm2835_delayMicroseconds(microseconds_delay);
