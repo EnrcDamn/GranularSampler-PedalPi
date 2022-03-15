@@ -72,7 +72,7 @@ typedef struct {
 
 typedef struct {
     uint32_t* Echo_Buffer;
-    uint32_t delay_index;
+    uint32_t index;
 } Delay;
 
 
@@ -153,7 +153,7 @@ int init(
     grain->is_reversed = FALSE; // randomly choose TRUE or FALSE
 
     delay->Echo_Buffer = (uint32_t*)calloc(DELAY_MAX, sizeof(uint32_t));
-    delay->delay_index = 0;
+    delay->index = 0;
 
     lfo_1->phase = 0.0f;
     lfo_1->rate = 0.5f;
@@ -362,10 +362,10 @@ void _granularPlayback(
         if (buff->sample_read > LOOP_MAX) buff->sample_read = 0;
     }
     // 3) Delay effect
-    delay->Echo_Buffer[delay->delay_index] = (*output_signal + delay->Echo_Buffer[delay->delay_index]) >> 2;
-    delay->delay_index++;
-    if(delay->delay_index >= DELAY_MAX) delay->delay_index = 0; 
-    *output_signal = (*output_signal + (delay->Echo_Buffer[delay->delay_index])) >> 1;
+    delay->Echo_Buffer[delay->index] = (*output_signal + delay->Echo_Buffer[delay->index]) >> 2;
+    delay->index++;
+    if(delay->index >= DELAY_MAX) delay->index = 0; 
+    *output_signal = (*output_signal + (delay->Echo_Buffer[delay->index])) >> 1;
 }
 
 
