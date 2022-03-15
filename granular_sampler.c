@@ -340,7 +340,6 @@ void _granularPlayback(
         // LFO 1 modulating grain size
         grain->min_size = (rand() % 1000) + 500; // rand 500 (0.02 sec) -> 1500
         grain->size = grain->min_size + (uint32_t)((1.0f + sinf(2.0f * PI * lfo_1->phase)) * grain->factor);
-        printf("%d\n", grain->size);
         grain->index = 0;
         grain->is_reversed = rand() % 2;
         // LFO 2 (slower) modulating grain position
