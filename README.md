@@ -29,7 +29,7 @@ The effect is divided into two communicating stages, that will affect each other
         3) **Reversed**: inspired by reel-to-reel tape machines, this will reverse the entire looping. Works really well with half-speed playback.
 
 
-2) When the `TOGGLE_SWITCH` is in "DOWN" position, you will enter the *pitch control* channel. 
+2) When the `TOGGLE_SWITCH` is in "DOWN" position, you will enter the *clock* channel. 
 
     This control will affect the clock rate, so it's directly linked to the playback speed (for example if you set the pitch one octave below, it will halve the clock rate and consequentely the playback speed). This will produce some interesting glitchy effects, due to the lo-fi nature of the 12-bit ADC.
     You can adjust the speed only in pre-defined harmonic steps of 3rds, perfect 5ths and octaves.
@@ -46,7 +46,7 @@ The effect is divided into two communicating stages, that will affect each other
 
 ### Visual diagram / manual:
 
-![Pedal Pi](assets/pedal-pi-intro.png)
+![Pedal Pi](assets/pedal-pi-visual-diagram.png)
 
 ## Purchasing and setup
 ### 1. Shop
