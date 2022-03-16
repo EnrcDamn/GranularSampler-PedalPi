@@ -2,12 +2,12 @@
 
 A granular delay / micro-sampler script inspired by guitar pedals like [Chase Bliss Mood](https://www.chaseblissaudio.com/shop-pedals/mood) or [Count to 5](https://mtlasm.com/product/count-to-5/) and designed for the [Electrosmash Pedal Pi](https://www.electrosmash.com/pedal-pi) project with Raspberry Pi Zero.
 
-This audio effect is an original design based on a project I made for my BSc thesis on audio signal distortion.
+This audio effect is an original design, based on a project I made for my BSc thesis on audio signal distortion.
 
 
 ### Controls
 
-The effect is divided into two communicating stages, that will affect each other in many different possibilities:
+The effect is divided into two communicating stages:
 
 1) By selecting the `TOGGLE_SWITCH` in "UP" position, you will enter the *loop* channel.
     * `PUSH_1`: 
@@ -24,14 +24,14 @@ The effect is divided into two communicating stages, that will affect each other
 
         1) **Normal**: the recording starts looping back as it is.
 
-        2) **Granular Delay**: the most fun and unpredictable mode, this will break, freeze and scatter the stored audio into little pieces. The size, position and playback of the grains is sometimes randomized, sometimes controlled by an LFO. There's also an always-on delay effect on top of the granular loop, to help diffuse the sound into a denser texture.
+        2) **Granular Delay**: the most fun and unpredictable mode; this will break, freeze and scatter the stored audio into little pieces. The size, position and direction of the grains is sometimes randomized, sometimes controlled by an LFO. There's also an always-on delay effect on top of the granular loop, to help diffuse the sound into a denser texture.
 
         3) **Reversed**: inspired by reel-to-reel tape machines, this will reverse the entire looping. Works really well with half-speed playback.
 
 
 2) When the `TOGGLE_SWITCH` is in "DOWN" position, you will enter the *clock* channel. 
 
-    This control will affect the clock rate, so it's directly linked to the playback speed of your recorded piece of audio (for example if you set the pitch one octave below, it will halve the clock rate and consequentely the playback speed). This will produce some interesting glitchy effects, due to the lo-fi nature of the 12-bit ADC.
+    This channel will affect the clock rate, as it's directly linked to the playback speed of your recorded piece of audio (for example, if you set the pitch one octave down it will halve the clock rate, and consequentely the playback speed). This will produce some interesting glitchy effects, due to the lo-fi nature of the 12-bit ADC.
     You can adjust the speed only in pre-defined harmonic steps of 3rds, perfect 5ths and octaves.
     
     * `PUSH_1`: 
@@ -40,7 +40,7 @@ The effect is divided into two communicating stages, that will affect each other
     
     * `PUSH_2`:
 
-        Pitches up the loop. The subsequent intervals are +4 semitones (major 3rd), +7 st. (perfect 5th), +10 st. (minor 7th), +12 st. (full octave).
+        Pitches up the loop. The subsequent intervals are: +4 semitones (major 3rd), +7 st. (perfect 5th), +10 st. (minor 7th), +12 st. (full octave).
 
     Keep in mind that the pitch control will only affect your recorded piece of audio, not the input signal. So if you haven't recorded anything yet, this channel won't produce any effect.
 
