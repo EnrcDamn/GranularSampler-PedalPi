@@ -238,12 +238,7 @@ void setControls(
                 if (buff->playback_mode > 2)
                     buff->playback_mode = 0;
 
-                // if (buff->playback_mode==0)
-                //     printf("Playback: normal (%d)\n", buff->playback_mode);
-                // else if (buff->playback_mode == 1)
-                //     printf("Playback: granular (%d)\n", buff->playback_mode);
-                // else
-                //     printf("Playback: reverse (%d)\n", buff->playback_mode);
+                
             }
         }
         else
