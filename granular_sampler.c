@@ -114,11 +114,11 @@ int init(
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);    // The default
 
     // Define GPIO pins configuration
-    bcm2835_gpio_fsel(PUSH1, BCM2835_GPIO_FSEL_INPT); 			// PUSH1 button as input
-    bcm2835_gpio_fsel(PUSH2, BCM2835_GPIO_FSEL_INPT); 			// PUSH2 button as input
-    bcm2835_gpio_fsel(TOGGLE_SWITCH, BCM2835_GPIO_FSEL_INPT);	// TOGGLE_SWITCH as input
-    bcm2835_gpio_fsel(FOOT_SWITCH, BCM2835_GPIO_FSEL_INPT); 	// FOOT_SWITCH as input
-    bcm2835_gpio_fsel(LED, BCM2835_GPIO_FSEL_OUTP);				// LED as output
+    bcm2835_gpio_fsel(PUSH1, BCM2835_GPIO_FSEL_INPT);           // PUSH1 button as input
+    bcm2835_gpio_fsel(PUSH2, BCM2835_GPIO_FSEL_INPT);           // PUSH2 button as input
+    bcm2835_gpio_fsel(TOGGLE_SWITCH, BCM2835_GPIO_FSEL_INPT);   // TOGGLE_SWITCH as input
+    bcm2835_gpio_fsel(FOOT_SWITCH, BCM2835_GPIO_FSEL_INPT);     // FOOT_SWITCH as input
+    bcm2835_gpio_fsel(LED, BCM2835_GPIO_FSEL_OUTP);             // LED as output
 
     bcm2835_gpio_set_pud(PUSH1, BCM2835_GPIO_PUD_UP);           // PUSH1 pull-up enabled   
     bcm2835_gpio_set_pud(PUSH2, BCM2835_GPIO_PUD_UP);           // PUSH2 pull-up enabled 
@@ -163,7 +163,6 @@ int init(
     lfo_2->phase = 0.0f;
     lfo_2->rate = 0.25f;
     lfo_2->phase_stride = lfo_2->rate * sample_duration;
-
     return 0;
 }
 
@@ -260,7 +259,6 @@ void setControls(
         if (buff->pitch > 0.5) 
             buff->pitch -= 0.25; 
     } 
-     
     if (board->PUSH2_val == PRESSED)  
     {   
         bcm2835_delay(100); // 100ms delay for buttons debouncing 
