@@ -11,10 +11,10 @@
 
 // Define input pins
 #define PUSH1 	        RPI_GPIO_P1_08      //GPIO14
-#define PUSH2           RPI_V2_GPIO_P1_38  	//GPIO20 
-#define TOGGLE_SWITCH 	RPI_V2_GPIO_P1_32 	//GPIO12
-#define FOOT_SWITCH     RPI_GPIO_P1_10 		//GPIO15
-#define LED             RPI_V2_GPIO_P1_36 	//GPIO16
+#define PUSH2           RPI_V2_GPIO_P1_38   //GPIO20 
+#define TOGGLE_SWITCH 	RPI_V2_GPIO_P1_32   //GPIO12
+#define FOOT_SWITCH     RPI_GPIO_P1_10      //GPIO15
+#define LED             RPI_V2_GPIO_P1_36   //GPIO16
 
 #define TRUE 1
 #define FALSE 0
