@@ -50,9 +50,9 @@ typedef struct {
     uint8_t playback_mode;
     uint32_t starting_sample;
     uint32_t ending_sample;
-    long sample_write;
-    float sample_read;
+    float sample_index;
     uint8_t is_buffer_maxed_out;
+    uint32_t record_length;
 } BufferStatus;
 
 typedef struct {
@@ -142,7 +142,8 @@ int init(
     buff->recording = FALSE;
     buff->playback_mode = 0;
     buff->is_buffer_maxed_out = FALSE;
-    buff->sample_write = 0;
+    buff->sample_index = 0;
+    buff->record_length = 0;
     buff->pitch = 1.0f;
 
     grain->index = 0;
@@ -176,87 +177,96 @@ void readInputSignal(uint32_t* input_signal)
 
 
 void readControls(BoardStatus* board)
-{
-    board->PUSH1_val = bcm2835_gpio_lev(PUSH1);
-    board->PUSH2_val = bcm2835_gpio_lev(PUSH2);
-    board->TOGGLE_SWITCH_val = bcm2835_gpio_lev(TOGGLE_SWITCH);
+{   
+    // Update controls values
     board->FOOT_SWITCH_val = bcm2835_gpio_lev(FOOT_SWITCH);
+    if (board->FOOT_SWITCH_val == PRESSED)
+    {
+        board->PUSH1_val = bcm2835_gpio_lev(PUSH1);
+        board->PUSH2_val = bcm2835_gpio_lev(PUSH2);
+        board->TOGGLE_SWITCH_val = bcm2835_gpio_lev(TOGGLE_SWITCH);
+    }
 }
 
 
-void setControls(
-    BoardStatus* board,
-    BufferStatus* buff)
-{   
-    readControls(board);
+void setControls( 
+    BoardStatus* board, 
+    BufferStatus* buff) 
+{    
     // Read the controls approx. every 0.2 seconds to save resources
+    
     board->read_timer++;
-    if (board->read_timer >= sample_rate / 5)
-    {
-        board->read_timer = 0;
-        // Light the effect when the footswitch is activated
-        bcm2835_gpio_write(LED, !board->FOOT_SWITCH_val);
+    if (board->read_timer < sample_rate / 5) 
+        return;
+    board->read_timer = 0;
 
-        if (board->TOGGLE_SWITCH_val == 0)
-        {
-            if (board->PUSH1_val == PRESSED)
-                board->is_PUSH1_pressed = TRUE;
-            if (board->PUSH1_val == !PRESSED && board->is_PUSH1_pressed == TRUE)
-            { 	
-                board->is_PUSH1_pressed = FALSE;
-                if (buff->recording == TRUE)
-                {   
-                    buff->pitch = 1.0f;
-                    buff->recording = FALSE;
-                    // printf("Stopped recording.\n");
-                    buff->ending_sample = buff->sample_write;
-                    if (buff->sample_write >= LOOP_MAX - 1)
-                        buff->starting_sample = 0;
-                    else
-                    {
-                        if (buff->is_buffer_maxed_out)
-                            buff->starting_sample = buff->ending_sample + 1;
-                        else
-                            buff->starting_sample = 0;
-                    }
-                    buff->is_buffer_maxed_out = FALSE;
-                    buff->sample_write = buff->starting_sample;
-                }
-                else if (buff->recording == FALSE)
-                {   
-                    buff->pitch = 1.0f;
-                    buff->recording = TRUE;
-                    // printf("Recording...\n");
-                    buff->sample_write = 0;
-                    buff->is_buffer_maxed_out = FALSE;
-                }
-            }
-            if (board->PUSH2_val == PRESSED)
+    readControls(board);
+
+    // Light the effect when the footswitch is activated 
+    bcm2835_gpio_write(LED, !board->FOOT_SWITCH_val); 
+
+    // When TOGGLE_SWITCH is in UP position
+    if (board->TOGGLE_SWITCH_val == 0) 
+    {   
+        // When the button is pressed
+        if (board->PUSH1_val == PRESSED) 
+            board->is_PUSH1_pressed = TRUE;
+        // When the button is released
+        if (board->PUSH1_val == !PRESSED && board->is_PUSH1_pressed == TRUE) 
+        {   
+            board->is_PUSH1_pressed = FALSE; 
+            // Stopping recording...
+            if (buff->recording == TRUE) 
+            {    
+                buff->pitch = 1.0f; 
+                buff->recording = FALSE;
+                buff->ending_sample = buff->sample_index; 
+                if (buff->sample_index >= LOOP_MAX - 1) 
+                    buff->starting_sample = 0; 
+                else 
+                { 
+                    if (buff->is_buffer_maxed_out) 
+                        buff->starting_sample = buff->ending_sample + 1; 
+                    else 
+                        buff->starting_sample = 0; 
+                } 
+                buff->is_buffer_maxed_out = FALSE; 
+                buff->sample_index = buff->starting_sample; 
+            } 
+            else
+            // Starting recording...
             {   
-                bcm2835_delay(100); // 100ms delay for buttons debouncing
-                buff->playback_mode++;
-                if (buff->playback_mode > 2)
-                    buff->playback_mode = 0;
+                buff->pitch = 1.0f; 
+                buff->recording = TRUE;
+                buff->sample_index = 0;
+                buff->is_buffer_maxed_out = FALSE;
+                buff->record_length = 0;
+            }
+        } 
+        if (board->PUSH2_val == PRESSED) 
+        {    
+            bcm2835_delay(100); // 100ms delay for buttons debouncing 
+            buff->playback_mode++; 
+            if (buff->playback_mode > 2) 
+                buff->playback_mode = 0;
+        } 
+        return; 
+    } 
 
-                
-            }
-        }
-        else
-        {
-            if (board->PUSH1_val == PRESSED)
-            {
-                bcm2835_delay(100); // 100ms delay for buttons debouncing
-                if (buff->pitch > 0.5)
-                    buff->pitch -= 0.25;
-            }
-            if (board->PUSH2_val == PRESSED) 
-            { 	
-                bcm2835_delay(100); // 100ms delay for buttons debouncing
-                if (buff->pitch < 2.0)
-                    buff->pitch += 0.25;
-            }
-        }
-    }
+    // When TOGGLE_SWITCH is in DOWN position
+    if (board->PUSH1_val == PRESSED) 
+    { 
+        bcm2835_delay(100); // 100ms delay for buttons debouncing 
+        if (buff->pitch > 0.5) 
+            buff->pitch -= 0.25; 
+    } 
+     
+    if (board->PUSH2_val == PRESSED)  
+    {   
+        bcm2835_delay(100); // 100ms delay for buttons debouncing 
+        if (buff->pitch < 2.0) 
+            buff->pitch += 0.25; 
+    } 
 }
 
 
@@ -278,14 +288,17 @@ void _recordSignal(
     // Start recording
     board->LED_blinking = TRUE;
     board->LED_timer--;     
-    Loop_Buffer[buff->sample_write] = *input_signal;
-    buff->sample_write++;
+    Loop_Buffer[(uint32_t)buff->sample_index] = *input_signal;
+    buff->sample_index++;
+    buff->record_length++;
     *output_signal = *input_signal;
-    if (buff->sample_write >= LOOP_MAX) 
+    if (buff->sample_index >= LOOP_MAX - 1) 
     {
         buff->is_buffer_maxed_out = TRUE;
-        buff->sample_write = 0;
+        buff->sample_index = 0;
     }
+    if (buff->record_length >= LOOP_MAX - 1)
+        buff->record_length = LOOP_MAX - 1;
     
     // Led in blinking mode while recording
     if (board->LED_blinking && board->LED_timer < 0)
@@ -304,14 +317,14 @@ void _normalPlayback(
 {
     uint32_t* Loop_Buffer = buff->Loop_Buffer;
     // NORMAL PLAYBACK
-    *output_signal = (Loop_Buffer[(uint32_t)buff->sample_read] + *input_signal) >> 1;
+    *output_signal = (Loop_Buffer[(uint32_t)buff->sample_index] + *input_signal) >> 1;
     // Pitch shifting
-    buff->sample_read += buff->pitch;
-    if (buff->sample_read == buff->ending_sample)
-        buff->sample_read = buff->starting_sample;
+    buff->sample_index += buff->pitch;
+    if (buff->sample_index == buff->ending_sample)
+        buff->sample_index = buff->starting_sample;
     else 
-        if (buff->sample_read >= LOOP_MAX)
-            buff->sample_read = 0;
+        if (buff->sample_index >= buff->record_length)
+            buff->sample_index = 0;
 }
 
 
@@ -338,28 +351,33 @@ void _granularPlayback(
         grain->index = 0;
         grain->is_reversed = rand() % 2;
         // LFO 2 (slower) modulating grain position
-        grain->position = (uint32_t)((1.0f + sinf(2.0f * PI * lfo_2->phase)) * ((LOOP_MAX - 1) / 2));
-        buff->sample_read = grain->position;
+        grain->position = (uint32_t)((1.0f + sinf(2.0f * PI * lfo_2->phase)) * ((buff->record_length - 1) / 2));
+        buff->sample_index = grain->position;
     }
+
     // 2) Randomly reversing grains
     if (grain->is_reversed)
     {
-        *output_signal = (Loop_Buffer[(uint32_t)buff->sample_read] + *input_signal);
+        *output_signal = (Loop_Buffer[(uint32_t)buff->sample_index] + *input_signal);
         // Pitch shifting
-        buff->sample_read -= buff->pitch;
-        if (buff->sample_read < 0) buff->sample_read = LOOP_MAX - 1;
+        buff->sample_index -= buff->pitch;
+        if (buff->sample_index < 0)
+            buff->sample_index = buff->record_length - 1;
     }
     else
     {
-        *output_signal = (Loop_Buffer[(uint32_t)buff->sample_read] + *input_signal);
+        *output_signal = (Loop_Buffer[(uint32_t)buff->sample_index] + *input_signal);
         // Pitch shifting
-        buff->sample_read += buff->pitch;
-        if (buff->sample_read > LOOP_MAX) buff->sample_read = 0;
+        buff->sample_index += buff->pitch;
+        if (buff->sample_index > buff->record_length - 1)
+            buff->sample_index = 0;
     }
+    
     // 3) Delay effect
     delay->Echo_Buffer[delay->index] = (*output_signal + delay->Echo_Buffer[delay->index]) >> 2;
     delay->index++;
-    if(delay->index >= DELAY_MAX) delay->index = 0; 
+    if(delay->index >= DELAY_MAX)
+        delay->index = 0; 
     *output_signal = (*output_signal + (delay->Echo_Buffer[delay->index])) >> 1;
 }
 
@@ -371,14 +389,14 @@ void _reversedPlayback(
 {
     uint32_t* Loop_Buffer = buff->Loop_Buffer;
     // REVERSE ALL SIGNAL
-    *output_signal = (Loop_Buffer[(uint32_t)buff->sample_read] + *input_signal) >> 1;
+    *output_signal = (Loop_Buffer[(uint32_t)buff->sample_index] + *input_signal) >> 1;
     // Pitch shifting
-    buff->sample_read -= buff->pitch;
-    if (buff->sample_read == buff->starting_sample)
-        buff->sample_read = buff->ending_sample;
+    buff->sample_index -= buff->pitch;
+    if (buff->sample_index == buff->starting_sample)
+        buff->sample_index = buff->ending_sample;
     else
-        if (buff->sample_read <= 0)
-            buff->sample_read = LOOP_MAX - 1;
+        if (buff->sample_index <= 0)
+            buff->sample_index = buff->record_length - 1;
 }
 
 
@@ -443,7 +461,7 @@ int main(int argc, char **argv)
         
         // Read the FOOT_SWITCH value
         if (board.FOOT_SWITCH_val == PRESSED)
-        {
+        {   
             readInputSignal(&input_signal);
 
             processSignal(
@@ -463,13 +481,12 @@ int main(int argc, char **argv)
             bcm2835_pwm_set_data(1, output_signal & 0x3F);
             bcm2835_pwm_set_data(0, output_signal >> 6);
         }
-        else 
-            // FOOT_SWITCH deactivated
+        else
+            // when FOOT_SWITCH deactivated
             board.FOOT_SWITCH_val = bcm2835_gpio_lev(FOOT_SWITCH);
     }
-
-	// Close all and exit
-	bcm2835_spi_end();
+    // Close all and exit
+    bcm2835_spi_end();
     bcm2835_close();
     return 0;
 }
