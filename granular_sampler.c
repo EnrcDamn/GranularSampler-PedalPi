@@ -138,7 +138,7 @@ int init(
 
     buff->Loop_Buffer = (uint32_t*)calloc(LOOP_MAX, sizeof(uint32_t));
     buff->starting_sample = 0;
-    buff->ending_sample = LOOP_MAX - 1;
+    buff->ending_sample = LOOP_MAX;
     buff->recording = FALSE;
     buff->playback_mode = 0;
     buff->is_buffer_maxed_out = FALSE;
@@ -220,7 +220,7 @@ void setControls(
                 buff->pitch = 1.0f; 
                 buff->recording = FALSE;
                 buff->ending_sample = buff->sample_index; 
-                if (buff->sample_index >= LOOP_MAX - 1) 
+                if (buff->sample_index >= LOOP_MAX) 
                     buff->starting_sample = 0; 
                 else 
                 { 
@@ -290,13 +290,13 @@ void _recordSignal(
     buff->sample_index++;
     buff->record_length++;
     *output_signal = *input_signal;
-    if (buff->sample_index >= LOOP_MAX - 1) 
+    if (buff->sample_index >= LOOP_MAX) 
     {
         buff->is_buffer_maxed_out = TRUE;
         buff->sample_index = 0;
     }
-    if (buff->record_length >= LOOP_MAX - 1)
-        buff->record_length = LOOP_MAX - 1;
+    if (buff->record_length >= LOOP_MAX)
+        buff->record_length = LOOP_MAX;
     
     // Led in blinking mode while recording
     if (board->LED_blinking && board->LED_timer < 0)
@@ -349,7 +349,7 @@ void _granularPlayback(
         grain->index = 0;
         grain->is_reversed = rand() % 2;
         // LFO 2 (slower) modulating grain position
-        grain->position = (uint32_t)((1.0f + sinf(2.0f * PI * lfo_2->phase)) * ((buff->record_length - 1) / 2));
+        grain->position = (uint32_t)((1.0f + sinf(2.0f * PI * lfo_2->phase)) * ((buff->record_length) / 2));
         buff->sample_index = grain->position;
     }
 
@@ -360,14 +360,14 @@ void _granularPlayback(
         // Pitch shifting
         buff->sample_index -= buff->pitch;
         if (buff->sample_index < 0)
-            buff->sample_index = buff->record_length - 1;
+            buff->sample_index = buff->record_length ;
     }
     else
     {
         *output_signal = (Loop_Buffer[(uint32_t)buff->sample_index] + *input_signal);
         // Pitch shifting
         buff->sample_index += buff->pitch;
-        if (buff->sample_index > buff->record_length - 1)
+        if (buff->sample_index > buff->record_length )
             buff->sample_index = 0;
     }
     
@@ -394,7 +394,7 @@ void _reversedPlayback(
         buff->sample_index = buff->ending_sample;
     else
         if (buff->sample_index <= 0)
-            buff->sample_index = buff->record_length - 1;
+            buff->sample_index = buff->record_length ;
 }
 
 
