@@ -54,3 +54,4 @@ dkms.conf
 
 test.c
 function_test.c
+sine_osc_test.c
