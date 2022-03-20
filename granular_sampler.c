@@ -29,6 +29,7 @@ uint32_t sample_rate;
 float sample_duration;
 uint8_t mosi[10] = { 0x01, 0x00, 0x00 }; // 12 bit ADC read 0x08 ch0, - 0c for ch1 
 uint8_t miso[10] = { 0 };
+float Sin_Table[1000];
 
 // Structures
 typedef struct {
@@ -276,6 +277,22 @@ void updateOsc(Oscillator* osc)
 }
 
 
+float _sin(float angle)
+{
+    int32_t index = angle / (2.0f * PI) * 1000;
+    return Sin_Table[index];
+}
+
+
+void prepareSinTable()
+{   
+    int i;
+    for (i=0; i<1000; i++){
+        Sin_Table[i] = sinf(2.0f * PI * i / 1000.0f);
+    }
+}
+
+
 void _recordSignal(
     uint32_t* input_signal,
     uint32_t* output_signal,
@@ -345,11 +362,11 @@ void _granularPlayback(
     {   
         // LFO 1 modulating grain size
         grain->min_size = (rand() % 1000) + 500; // rand 500 (0.02 sec) -> 1500
-        grain->size = grain->min_size + (uint32_t)((1.0f + sinf(2.0f * PI * lfo_1->phase)) * grain->factor);
+        grain->size = grain->min_size + (uint32_t)((1.0f + _sin(2.0f * PI * lfo_1->phase)) * grain->factor);
         grain->index = 0;
         grain->is_reversed = rand() % 2;
         // LFO 2 (slower) modulating grain position
-        grain->position = (uint32_t)((1.0f + sinf(2.0f * PI * lfo_2->phase)) * ((buff->record_length) / 2));
+        grain->position = (uint32_t)((1.0f + _sin(2.0f * PI * lfo_2->phase)) * ((buff->record_length) / 2));
         buff->sample_index = grain->position;
     }
 
@@ -441,8 +458,8 @@ int main(int argc, char **argv)
     BufferStatus buff; // Buffer structure
     Grain grain; // Granular parameters
     Delay delay; // Delay parameters
-    Oscillator lfo_1; // Sine wave LFO
-    Oscillator lfo_2; // Sine wave LFO
+    Oscillator lfo_1; // Sine wave LFO 1
+    Oscillator lfo_2; // Sine wave LFO 2 (slower)
 
     init(
         &board,
@@ -451,6 +468,9 @@ int main(int argc, char **argv)
         &delay,
         &lfo_1,
         &lfo_2);
+
+    // Pre-calculate sin table
+    prepareSinTable();
 
     // Main Loop
     while(TRUE)
