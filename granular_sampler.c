@@ -29,9 +29,9 @@ uint32_t sample_rate;
 float sample_duration;
 uint8_t mosi[10] = { 0x01, 0x00, 0x00 }; // 12 bit ADC read 0x08 ch0, - 0c for ch1 
 uint8_t miso[10] = { 0 };
-float Sin_Table[1000];
+float Sin_Table[1000]; // Initialize array for the LFOs sin table
 
-// Structures
+// Structs
 typedef struct {
     uint32_t read_timer;
     uint8_t FOOT_SWITCH_val;
@@ -77,6 +77,7 @@ typedef struct {
 } Delay;
 
 
+// Functions
 int init(
     BoardStatus* board,
     BufferStatus* buff,
@@ -194,7 +195,6 @@ void setControls(
     BufferStatus* buff) 
 {    
     // Read the controls approx. every 0.2 seconds to save resources
-    
     board->read_timer++;
     if (board->read_timer < sample_rate / 5) 
         return;
@@ -209,8 +209,11 @@ void setControls(
     if (board->TOGGLE_SWITCH_val == 0) 
     {   
         // When the button is pressed
-        if (board->PUSH1_val == PRESSED) 
+        if (board->PUSH1_val == PRESSED)
+        {
+            bcm2835_delay(100); // 100ms delay for buttons debouncing
             board->is_PUSH1_pressed = TRUE;
+        }
         // When the button is released
         if (board->PUSH1_val == !PRESSED && board->is_PUSH1_pressed == TRUE) 
         {   
@@ -244,7 +247,8 @@ void setControls(
             }
         } 
         if (board->PUSH2_val == PRESSED) 
-        {    
+        {   
+            // Switch to next playback mode
             bcm2835_delay(100); // 100ms delay for buttons debouncing 
             buff->playback_mode++; 
             if (buff->playback_mode > 2) 
@@ -255,13 +259,15 @@ void setControls(
 
     // When TOGGLE_SWITCH is in DOWN position
     if (board->PUSH1_val == PRESSED) 
-    { 
+    {   
+        // Pitch down (in quarter steps -> half speed)
         bcm2835_delay(100); // 100ms delay for buttons debouncing 
         if (buff->pitch > 0.5) 
             buff->pitch -= 0.25; 
     } 
     if (board->PUSH2_val == PRESSED)  
     {   
+        // Pitch up (in quarter steps -> double speed)
         bcm2835_delay(100); // 100ms delay for buttons debouncing 
         if (buff->pitch < 2.0) 
             buff->pitch += 0.25; 
@@ -271,6 +277,7 @@ void setControls(
 
 void updateOsc(Oscillator* osc)
 {   
+    // Increase phase for the osc
     osc->phase += osc->phase_stride;
     if (osc->phase >= 1.0f) // 1 circle rotation: 0 -> 1 
         osc->phase = 0.0f;
@@ -278,7 +285,8 @@ void updateOsc(Oscillator* osc)
 
 
 float _sin(float angle)
-{
+{   
+    // Calculate value for sin in range (0 -> 1)
     int32_t index = angle / (2.0f * PI) * 1000;
     return Sin_Table[index];
 }
@@ -286,6 +294,7 @@ float _sin(float angle)
 
 void prepareSinTable()
 {   
+    // Pre-calculate sin table
     int i;
     for (i=0; i<1000; i++){
         Sin_Table[i] = sinf(2.0f * PI * i / 1000.0f);
@@ -336,7 +345,7 @@ void _normalPlayback(
     // Pitch shifting
     buff->sample_index += buff->pitch;
     if (buff->sample_index == buff->ending_sample)
-        buff->sample_index = buff->starting_sample;
+        buff->sample_index = buff->starting_sample; // When the buff length is exceeded
     else 
         if (buff->sample_index >= buff->record_length)
             buff->sample_index = 0;
@@ -364,7 +373,7 @@ void _granularPlayback(
         grain->min_size = (rand() % 1000) + 500; // rand 500 (0.02 sec) -> 1500
         grain->size = grain->min_size + (uint32_t)((1.0f + _sin(2.0f * PI * lfo_1->phase)) * grain->factor);
         grain->index = 0;
-        grain->is_reversed = rand() % 2;
+        grain->is_reversed = rand() % 2; // True or false
         // LFO 2 (slower) modulating grain position
         grain->position = (uint32_t)((1.0f + _sin(2.0f * PI * lfo_2->phase)) * ((buff->record_length) / 2));
         buff->sample_index = grain->position;
@@ -388,7 +397,7 @@ void _granularPlayback(
             buff->sample_index = 0;
     }
     
-    // 3) Delay effect
+    // 3) Always-on delay effect
     delay->Echo_Buffer[delay->index] = (*output_signal + delay->Echo_Buffer[delay->index]) >> 2;
     delay->index++;
     if(delay->index >= DELAY_MAX)
@@ -408,7 +417,7 @@ void _reversedPlayback(
     // Pitch shifting
     buff->sample_index -= buff->pitch;
     if (buff->sample_index == buff->starting_sample)
-        buff->sample_index = buff->ending_sample;
+        buff->sample_index = buff->ending_sample; // When the buff length is exceeded
     else
         if (buff->sample_index <= 0)
             buff->sample_index = buff->record_length ;
