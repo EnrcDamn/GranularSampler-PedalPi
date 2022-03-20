@@ -286,7 +286,7 @@ void updateOsc(Oscillator* osc)
 
 float _sin(float angle)
 {   
-    // Calculate value for sin in range (0 -> 1)
+    // Calculate value for sin in range (0 -> 1000)
     int32_t index = angle / (2.0f * PI) * 1000;
     return Sin_Table[index];
 }
@@ -297,6 +297,7 @@ void prepareSinTable()
     // Pre-calculate sin table
     int i;
     for (i=0; i<1000; i++){
+        // In range (0 -> 1):
         Sin_Table[i] = sinf(2.0f * PI * i / 1000.0f);
     }
 }
