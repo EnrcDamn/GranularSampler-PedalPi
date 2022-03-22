@@ -50,15 +50,8 @@ The effect is divided into two communicating stages:
 
 ### Demo:
 
-<iframe
-    width="640"
-    height="480"
-    src="https://www.youtube.com/watch?v=6-Y0HitBXH0"
-    frameborder="0"
-    allow="autoplay; encrypted-media"
-    allowfullscreen
->
-</iframe>
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/6-Y0HitBXH0/0.jpg)](https://www.youtube.com/watch?v=6-Y0HitBXH0)
+
 
 ## Purchasing and setup
 ### 1. Shop
