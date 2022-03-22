@@ -36,17 +36,29 @@ The effect is divided into two communicating stages:
     
     * `PUSH_1`: 
     
-        Pitches down the loop. The subsequent intervals are: -5 semitones (perfect 5th), -12 st. (full octave). 
+        Pitches down the loop. The subsequent intervals from the root are: -5 semitones (perfect 5th), -12 st. (full octave). 
     
     * `PUSH_2`:
 
-        Pitches up the loop. The subsequent intervals are: +4 semitones (major 3rd), +7 st. (perfect 5th), +10 st. (minor 7th), +12 st. (full octave).
+        Pitches up the loop. The subsequent intervals from the root are: +4 semitones (major 3rd), +7 st. (perfect 5th), +10 st. (minor 7th), +12 st. (full octave).
 
     Keep in mind that the pitch control will only affect your recorded piece of audio, not the input signal. So if you haven't recorded anything yet, this channel won't produce any effect.
 
 ### Visual diagram / manual:
 
 ![Pedal Pi](assets/pedal-pi-visual-diagram.png)
+
+### Demo:
+
+<iframe
+    width="640"
+    height="480"
+    src="https://www.youtube.com/watch?v=6-Y0HitBXH0"
+    frameborder="0"
+    allow="autoplay; encrypted-media"
+    allowfullscreen
+>
+</iframe>
 
 ## Purchasing and setup
 ### 1. Shop
