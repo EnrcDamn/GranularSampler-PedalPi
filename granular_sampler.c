@@ -1,5 +1,5 @@
 // Granular delay / micro-sampler for Raspberry Pedal Pi
-// https://github.com/EnrcDamn/granular-sampler-pedal-pi
+// https://github.com/EnrcDamn/GranularSampler-PedalPi
 
 
 // Include libraries
