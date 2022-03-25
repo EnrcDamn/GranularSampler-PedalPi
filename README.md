@@ -73,8 +73,8 @@ sudo apt install git
 
 Cloning the repo:
 ``` sh
-git clone https://github.com/EnrcDamn/granular-sampler-pedal-pi.git
-cd granular-sampler-pedal-pi
+git clone https://github.com/EnrcDamn/GranularSampler-PedalPi.git
+cd GranularSampler-PedalPi
 ```
 
 Compiling and executing the script:
