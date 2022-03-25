@@ -57,7 +57,7 @@ The effect is divided into two communicating stages:
 ### 1. Shop
 
 * [Pedal Pi full kit](https://shop.electrosmash.com/product/pedal-pi-kit/)
-* [Raspberry Pi Zero](https://www.raspberrypi.com/news/raspberry-pi-zero-w-joins-family/) (chip)
+* [Raspberry Pi Zero](https://www.raspberrypi.com/news/raspberry-pi-zero-w-joins-family/) (SBC)
 
 Visit the Electrosmash [website](https://www.electrosmash.com/pedal-pi) for all the circuit details and assembling tutorial.
 
